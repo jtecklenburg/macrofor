@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "macrofor"
+version = "0.0.0"
+description = "Generate Fortran code from Python using a MACROFORT-like DSL (prototype)."
+authors = [ { name = "(you)", email = "you@example.com" } ]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []

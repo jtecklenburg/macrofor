@@ -1,0 +1,74 @@
+first line: Python function definition
+second line starting with #: Fortran command
+
+def callf(name,list) 
+#call name (list)
+
+def closef(unit)
+#close (unit)
+· 
+def commentf(string)
+#c    string 
+
+def commonf(name, list) 
+#common /name/ list
+
+def continuef(label) 
+#label continue
+
+def declaref(type, list) 
+#type list 
+
+def dof(label, index, start, end) 
+#do label, index=start, end
+
+def dof(label, index, start, end, step)
+#do label, index=start, end, step 
+ 
+def elsef() 
+#else
+
+def endf()
+#end
+ 
+def endiff() 
+#endif
+
+def equalf(variable, expression)
+#variable=expression
+ 
+def formatf(label, list)
+#label format (list)
+ 
+def functionf(type, name, list)
+#type function name (list)  
+
+def gotof(label) 
+#goto label
+
+def if_goto_f(condition, label) 
+#if (condition) goto label 
+
+def if_then_f(condition) 
+#if (condition) then
+
+def openf(unit, file, status)
+#open (unit=unit, file='file' ,status='status') 
+ 
+def parameterf(list) 
+#parameter (list)
+
+def programf(name) 
+#program name
+
+def readf(file, label, list) 
+#read (file, label) list
+
+def returnf()
+#return
+ 
+def subroutinef(name, list)
+#subroutine name (list)
+ 
+def writef(file,label,list) 
+#write (file, label) list
