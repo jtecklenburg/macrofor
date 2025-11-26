@@ -1,7 +1,7 @@
 """macrofor package - Python bindings and DSL for generating Fortran code.
 
-This package is a work-in-progress scaffold. Implementations live in the
-respective modules: `ast.py`, `api.py`, `codegen.py`.
+This package provides a comprehensive API for generating Fortran code from Python.
+The main API is in `api.py` with helper functions (*f) and macro functions (*m).
 """
 
-__all__ = ["ast", "api", "codegen"]
+__all__ = ["api"]

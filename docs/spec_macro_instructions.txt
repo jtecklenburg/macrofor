@@ -1,0 +1,59 @@
+first line: Python function definition
+next lines starting with #: Fortran command
+
+def dom(index, start, end, step, do_list)
+# do label index=start, end, step
+#	do_list
+# label continue	
+
+def dom(index ,start ,end, do_list)
+# do label index=start, end
+#	do_list
+# label continue	
+
+def functionm(type, name ,list, body_list)
+# type function name (list)
+# 	body_list
+# end
+
+def if_then_else_m(condition, then_list, else_list)
+# if (condition) then
+# 	then_list
+# else
+# 	else_list
+# endif
+
+def if_then_m(condition, then_list)
+# if (condition) then
+# 	then_list
+# endif
+
+def programm(name, body_list)
+# program name
+#	body_list
+# end
+
+def openm(unit, file, status, body_list)
+# open(unit=unit, file='file', status='status')
+#   body_list
+# close(unit=unit)
+
+def readm(file, format_list, var_list)
+# read(file, label) var_list
+# label format (format_list)
+
+def subroutinem(name, list, body_list)
+# subroutine name (list)
+# 	body_list
+# end
+
+def writem(file, format_list, var_list)
+# write (file, label) var_list
+# label format (format_list)
+
+def commonm(name, list)
+# common /name/ list
+
+def declarem(type, list)
+# type list
+

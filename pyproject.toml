@@ -4,9 +4,104 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "macrofor"
-version = "0.0.0"
-description = "Generate Fortran code from Python using a MACROFORT-like DSL (prototype)."
-authors = [ { name = "(you)", email = "you@example.com" } ]
+version = "0.1.0"
+description = "Generate Fortran code from Python using a MACROFORT-like DSL."
 readme = "README.md"
 requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "J. Tecklenburg", email = "jan.tecklenburg@gmx.de" }
+]
+keywords = [
+    "fortran",
+    "code-generation",
+    "dsl",
+    "macrofort",
+    "scientific-computing"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Code Generators"
+]
 dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.12",
+    "black>=21.0",
+    "flake8>=3.9",
+    "mypy>=0.900",
+    "isort>=5.0"
+]
+docs = [
+    "sphinx>=4.0",
+    "sphinx-rtd-theme>=1.0"
+]
+examples = [
+    "sympy>=1.10",
+    "pillow>=8.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/jtecklenburg/macrofor"
+Repository = "https://github.com/jtecklenburg/macrofor.git"
+Documentation = "https://github.com/jtecklenburg/macrofor#readme"
+"Bug Tracker" = "https://github.com/jtecklenburg/macrofor/issues"
+
+[tool.setuptools]
+packages = ["macrofor"]
+
+[tool.setuptools.package-data]
+macrofor = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--strict-markers -v"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Verzeichnisse
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+known_first_party = ["macrofor"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false

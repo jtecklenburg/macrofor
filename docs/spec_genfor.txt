@@ -1,0 +1,9 @@
+def genfor(fortranfile, list)
+
+# writes the list to fortran file.
+# defines unique labels 
+# clear exceptions
+# docstring
+# optional: select encoding and line endings (default values!)
+
+

@@ -20,8 +20,10 @@ def test_io_and_format():
     assert 'read (5) i, j' in r
     w = api.writef('6', 'fmt', ['x'])
     assert w == 'write (6, fmt) x'
-    fmt = api.formatf('10', ['I5', 'F10.2'])
-    assert 'format' in fmt and 'I5' in fmt
+    # Reset label counter before testing formatf
+    api._reset_label_counter()
+    fmt = api.formatf(['I5', 'F10.2'])
+    assert 'format' in fmt and 'I5' in fmt and '__LABEL_1__' in fmt
 
 
 def test_control_flow():
