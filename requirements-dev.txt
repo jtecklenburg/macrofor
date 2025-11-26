@@ -1,0 +1,8 @@
+pytest>=7.0
+jupyterlab>=4.0
+nbformat
+nbconvert
+ipykernel
+# optional helpers for docs & formatting
+sphinx
+black

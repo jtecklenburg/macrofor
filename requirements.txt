@@ -1,0 +1,4 @@
+sympy>=1.12
+numpy>=1.25
+pillow>=10.0
+# If your workflow compiles generated Fortran, you may need a Fortran compiler (gfortran) installed separately
