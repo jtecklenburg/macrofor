@@ -108,7 +108,7 @@ def closef(unit: str) -> str:
 
 
 def commentf(string: str) -> str:
-    """c    string
+    """!    string
 
     Generate a Fortran comment line.
 
@@ -116,15 +116,14 @@ def commentf(string: str) -> str:
         string: Comment text.
 
     Returns:
-        Fortran comment (e.g., "c    this is a comment").
+        Fortran comment (e.g., "!    this is a comment").
 
     Example:
         >>> commentf('calculate derivatives')
-        'c    calculate derivatives'
+        '!    calculate derivatives'
     """
-    # Fortran comment style (fixed: leading 'c' column; free format: '!')
-    # Keep simple: use 'c    ' to match original MACROFORT style
-    return f"c    {string}"
+    # Fortran comment style (Fortran 90: use '!' for modern style)
+    return f"!    {string}"
 
 
 def commonf(name: str, list: Iterable[str]) -> str:
@@ -137,14 +136,15 @@ def commonf(name: str, list: Iterable[str]) -> str:
         list: List of variable names.
 
     Returns:
-        Fortran COMMON statement (e.g., "common /data/ x, y, z").
+        Fortran COMMON statement (e.g., "common/data/x, y, z").
+        Note: Maple-style without spaces around slashes.
 
     Example:
         >>> commonf('data', ['x', 'y'])
-        'common /data/ x, y'
+        'common/data/x, y'
     """
     body = _normalize_list_arg(list)
-    return f"common /{name}/ {body}"
+    return f"common/{name}/{body}"
 
 
 def continuef(label: str) -> str:
@@ -180,8 +180,17 @@ def declaref(type: str, list: Iterable[str]) -> str:
     Example:
         >>> declaref('real', ['a', 'b', 'c'])
         'real a, b, c'
+        >>> declaref('implicit real*8', ['a-h', 'o-z'])
+        'implicit real*8(a-h,o-z)'
     """
     names = _normalize_list_arg(list)
+    
+    # Special handling for implicit statements: use parentheses and no spaces after commas
+    if type.lower().startswith('implicit'):
+        # Remove spaces after commas for implicit statements
+        names_compact = names.replace(', ', ',')
+        return f"{type}({names_compact})"
+    
     return f"{type} {names}"
 
 
@@ -199,11 +208,11 @@ def dof(label: Optional[str], index: str, start, end, step=None) -> str:
         step: Optional step value (default 1).
 
     Returns:
-        DO loop opening (e.g., "do 100 i=1, 100" or "do i=1, 100, 2").
+        DO loop opening (e.g., "do 100, i=1, 100" or "do i=1, 100, 2").
 
     Example:
         >>> dof('100', 'i', 1, 100)
-        'do 100 i=1, 100'
+        'do 100, i=1, 100'
         >>> dof(None, 'j', 1, 50, step=2)
         'do j = 1, 50, 2'
     """
@@ -363,8 +372,8 @@ def if_goto_f(condition: str, label: str) -> str:
     return f"if ({condition}) goto {label}"
 
 
-def openf(unit: str, file: str, status: str = 'unknown') -> str:
-    """open (unit=unit, file='file' ,status='status')
+def openf(unit: str, file: str, status: str = 'unknown', access: str = None) -> str:
+    """open(unit=unit, file='file', status='status'[, access='access'])
 
     Generate a Fortran OPEN statement.
 
@@ -372,16 +381,21 @@ def openf(unit: str, file: str, status: str = 'unknown') -> str:
         unit: Unit number.
         file: Filename.
         status: File status (e.g., "old", "new", "unknown").
+        access: Optional access mode (e.g., "append", "sequential").
 
     Returns:
-        OPEN statement (e.g., "open (unit=10, file='data.txt', status='old')").
+        OPEN statement (e.g., "open(unit=10, file='data.txt', status='old')").
 
     Example:
         >>> openf('10', 'input.txt', 'old')
-        "open (unit=10, file='input.txt', status='old')"
+        "open(unit=10, file='input.txt', status='old')"
+        >>> openf('11', 'output.txt', 'old', 'append')
+        "open(unit=11, file='output.txt', status='old', access='append')"
     """
-    # file should be quoted by caller if needed
-    return f"open (unit={unit}, file='{file}', status='{status}')"
+    if access:
+        return f"open(unit={unit}, file='{file}', status='{status}', access='{access}')"
+    else:
+        return f"open(unit={unit}, file='{file}', status='{status}')"
 
 
 def parameterf(list: Iterable[str]) -> str:
@@ -464,21 +478,21 @@ def returnf() -> str:
 def subroutinef(name: str, list: Iterable[str]) -> str:
     """subroutine name (list)
 
-    Generate a Fortran SUBROUTINE statement.
+    Generate a Fortran SUBROUTINE statement with comment header.
 
     Args:
         name: Subroutine name.
         list: List of parameters.
 
     Returns:
-        SUBROUTINE statement (e.g., "subroutine compute(x, y, z)").
+        SUBROUTINE statement with comment header (e.g., "!\n! SUBROUTINE compute\n!\nsubroutine compute(x, y, z)").
 
     Example:
         >>> subroutinef('compute', ['x', 'y', 'z'])
-        'subroutine compute(x, y, z)'
+        '!\\n! SUBROUTINE compute\\n!\\nsubroutine compute(x, y, z)'
     """
     args = _normalize_list_arg(list)
-    return f"subroutine {name}({args})"
+    return f"!\n! SUBROUTINE {name}\n!\nsubroutine {name}({args})"
 
 
 def writef(file: str, label: Optional[str], list: Iterable[str]) -> str:
@@ -560,7 +574,7 @@ def dom(index: str, start, end, do_list, step=None) -> str:
     body_text = _body_to_text(do_list)
     body_indented = _indent_lines(body_text)
     
-    return f"do {label} {rng}\n{body_indented}\n{label} continue"
+    return f"do {label}, {rng}\n{body_indented}\n{label} continue"
 
 
 def functionm(type: str, name: str, list: Iterable[str], body_list) -> str:
@@ -670,9 +684,9 @@ def programm(name: str, body_list) -> str:
 def subroutinem(name: str, list: Iterable[str], body_list) -> str:
     """subroutine name (list)
     	body_list
-    end
+    end subroutine name
 
-    Generate a multi-line SUBROUTINE block (macro version).
+    Generate a multi-line SUBROUTINE block (macro version) with comment header.
     
     Args:
         name: Subroutine name.
@@ -680,21 +694,21 @@ def subroutinem(name: str, list: Iterable[str], body_list) -> str:
         body_list: List of body statements.
     
     Returns:
-        Complete SUBROUTINE definition (indented body).
+        Complete SUBROUTINE definition with comment header (indented body).
     
     Example:
         >>> subroutinem('compute', ['x', 'y'], ['integer :: i', 'i = x + y'])
-        'subroutine compute(x, y)\\n  integer :: i\\n  i = x + y\\nend'
+        '!\\n! SUBROUTINE compute\\n!\\nsubroutine compute(x, y)\\n  integer :: i\\n  i = x + y\\nend subroutine compute'
     """
     args = _normalize_list_arg(list)
     body_text = _body_to_text(body_list)
     body_indented = _indent_lines(body_text)
     
-    return f"subroutine {name}({args})\n{body_indented}\nend"
+    return f"!\n! SUBROUTINE {name}\n!\nsubroutine {name}({args})\n{body_indented}\nend subroutine {name}"
 
 
-def openm(unit: str, file: str, status: str, body_list) -> str:
-    """open(unit=unit, file='file', status='status')
+def openm(unit: str, file: str, status: str, body_list, access: str = None) -> str:
+    """open(unit=unit, file='file', status='status'[, access='access'])
     	body_list
     close(unit=unit)
 
@@ -705,6 +719,7 @@ def openm(unit: str, file: str, status: str, body_list) -> str:
         file: Filename.
         status: File status (e.g., "old", "new", "unknown").
         body_list: List of I/O statements.
+        access: Optional access mode (e.g., "append", "sequential").
     
     Returns:
         OPEN statement, indented body, and CLOSE statement.
@@ -712,11 +727,16 @@ def openm(unit: str, file: str, status: str, body_list) -> str:
     Example:
         >>> openm('10', 'data.txt', 'old', ['read(10) x, y'])
         \"open(unit=10, file='data.txt', status='old')\\n  read(10) x, y\\nclose(unit=10)\"
+        >>> openm('11', 'output.txt', 'old', ['write(11) results'], 'append')
+        \"open(unit=11, file='output.txt', status='old', access='append')\\n  write(11) results\\nclose(unit=11)\"
     """
     body_text = _body_to_text(body_list)
     body_indented = _indent_lines(body_text)
     
-    return f"open(unit={unit}, file='{file}', status='{status}')\n{body_indented}\nclose(unit={unit})"
+    if access:
+        return f"open(unit={unit}, file='{file}', status='{status}', access='{access}')\n{body_indented}\nclose(unit={unit})"
+    else:
+        return f"open(unit={unit}, file='{file}', status='{status}')\n{body_indented}\nclose(unit={unit})"
 
 
 def readm(file: str, format_list: Iterable[str], var_list: Iterable[str]) -> str:
@@ -813,21 +833,110 @@ def declarem(type: str, list: Iterable[str]) -> str:
     return f"{type} {names}"
 
 
-def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n"):
-    """genfor(fortranfile, statements, [encoding], [line_ending])
+def _wrap_long_lines(code: str, max_length: int = 72, format_style: str = 'fixed') -> str:
+    """Wrap Fortran lines longer than max_length using continuation characters.
+    
+    Args:
+        code: Fortran source code.
+        max_length: Maximum line length (default: 72 for fixed format).
+        format_style: 'fixed' or 'free' (default: 'fixed').
+    
+    Returns:
+        Code with wrapped lines.
+    """
+    lines = code.split('\n')
+    wrapped = []
+    
+    for line in lines:
+        # Skip Fortran comments (must be at start of line, possibly with whitespace)
+        stripped = line.lstrip()
+        if stripped.startswith(('!', 'c ', 'C ', '* ', 'c\t', 'C\t')):
+            wrapped.append(line)
+            continue
+        # Also check for comment-only lines (just 'c', 'C', or '*')
+        if stripped in ('c', 'C', '*'):
+            wrapped.append(line)
+            continue
+        
+        # Skip short lines
+        if len(line) <= max_length:
+            wrapped.append(line)
+            continue
+        
+        # Line is too long - wrap it
+        indent = len(line) - len(line.lstrip())
+        remaining = line.strip()
+        first_line = True
+       
+        # Continue wrapping while remaining text (with indent) exceeds limit
+        while len(remaining) + indent > max_length:
+            
+            # Calculate where to split (leave room for indent and continuation)
+            available = max_length - indent
+            if not first_line:
+                available = max_length - 6  # Continuation line starts at column 7
+            
+            # Find a good split position (prefer operators and commas)
+            split_pos = available
+            
+            # Try to split at logical positions
+            for char in [', ', ',', ' + ', ' - ', ' * ', '/', '(', ' .and. ', ' .or. ']:
+                pos = remaining[:split_pos].rfind(char)
+                if pos > 0:  # Found a split point
+                    split_pos = pos + len(char)
+                    break
+            
+            # If no good split point found, force split at available position
+            if split_pos >= len(remaining):
+                split_pos = available
+            
+            # Generate continuation
+            if format_style == 'free':
+                # Fortran 90 Free Format: & at end of line
+                wrapped.append(' ' * indent + remaining[:split_pos].rstrip() + ' &')
+                remaining = remaining[split_pos:].lstrip()
+                if remaining and not remaining.startswith('&'):
+                    remaining = '&' + remaining
+                indent = 1  # Continuation lines get minimal indent
+            else:
+                # Fortran 77 Fixed Format: character in column 6
+                if first_line:
+                    wrapped.append(' ' * indent + remaining[:split_pos].rstrip())
+                    first_line = False
+                else:
+                    wrapped.append('     &' + remaining[:split_pos].rstrip())
+                remaining = remaining[split_pos:].lstrip()
+        
+        # Add the last part
+        if format_style == 'fixed' and not first_line:
+            wrapped.append('     &' + remaining)
+        else:
+            wrapped.append(' ' * indent + remaining)
+    
+    return '\n'.join(wrapped)
+    
+    return '\n'.join(wrapped)
+
+
+def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n", 
+           format_style='fixed', max_line_length=None):
+    """genfor(fortranfile, statements, [encoding], [line_ending], [format_style], [max_line_length])
 
     Write a list of macrofor statements/blocks to a Fortran file.
     
     - Resets and assigns unique labels for DO-loops and other control structures.
     - Replaces label placeholders (__LABEL_N__) with sequential numbers (100, 200, 300, ...).
+    - Automatically wraps long lines based on format style.
     - Raises clear exceptions on error.
-    - Optional: select encoding and line endings (default: utf-8, LF).
+    - Optional: select encoding, line endings, and Fortran format.
 
     Args:
         fortranfile (str or Path): Output file path.
         statements (list of str): List of Fortran code blocks/lines.
         encoding (str): File encoding (default: 'utf-8').
         line_ending (str): Line ending (default: '\\n').
+        format_style (str): 'fixed' (F77) or 'free' (F90+) (default: 'fixed').
+        max_line_length (int): Maximum line length. If None, uses 72 for fixed, 132 for free.
 
     Returns:
         None. Writes the Fortran code to the specified file.
@@ -841,7 +950,7 @@ def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n"):
         ...         dom('i', 1, 10, [equalf('x', 'i')]),
         ...         dom('j', 1, 5, [equalf('y', 'j')])
         ...     ])
-        ... ])
+        ... ], format_style='free')
     """
     from pathlib import Path
     
@@ -858,6 +967,14 @@ def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n"):
         
         # Replace label placeholders with sequential numbers (100, 200, 300, ...)
         code = _replace_label_placeholders(code)
+        
+        # Determine max line length based on format
+        if max_line_length is None:
+            max_line_length = 72 if format_style == 'fixed' else 132
+        
+        # Wrap long lines if needed
+        if max_line_length > 0:
+            code = _wrap_long_lines(code, max_line_length, format_style)
         
         # Write to file with proper encoding and line endings
         with open(filepath, "w", encoding=encoding, newline="") as f:
