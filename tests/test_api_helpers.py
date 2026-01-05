@@ -5,7 +5,9 @@ def test_callf_and_subroutinef():
     s = api.callf('foo', ['a', 'b'])
     assert s == 'call foo(a, b)'
     h = api.subroutinef('mysub', ['n', 'm'])
-    assert h == 'subroutine mysub(n, m)'
+    # subroutinef now includes F77-compatible header comments
+    assert 'c\nc SUBROUTINE mysub\nc' in h
+    assert 'subroutine mysub(n, m)' in h
 
 
 def test_equalf_and_declaref():

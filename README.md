@@ -18,6 +18,25 @@ The `macrofor` Python package applies these ideas in a modern, Pythonic API, mak
 
 ## Quick Start
 
+### Setting the Fortran Style
+
+Before generating code, choose your Fortran style (F77 or F90):
+
+```python
+from macrofor.api import set_fortran_style
+
+# For Fortran 77 fixed format (default)
+set_fortran_style('f77')  # or 'fixed'
+
+# For Fortran 90+ free format
+set_fortran_style('f90')  # or 'free'
+```
+
+This sets the global style for:
+- Comment characters (`c` for F77, `!` for F90)
+- Line length limits (72 for F77, 132 for F90)
+- Line continuation format
+
 ### Single-Line Instructions (`*f` functions)
 
 ```python
@@ -78,7 +97,10 @@ programm('myapp', [
 Use `genfor` to write complete Fortran programs directly to a file:
 
 ```python
-from macrofor.api import genfor, programm, equalf, declaref
+from macrofor.api import set_fortran_style, genfor, programm, equalf, declaref
+
+# Set the Fortran style first
+set_fortran_style('f90')
 
 # Generate and write a complete Fortran program to a file
 genfor('output.f90', [
@@ -95,10 +117,14 @@ genfor('output.f90', [
 
 The `genfor` function:
 - Writes Fortran code to a file with proper formatting
+- Uses the global Fortran style set by `set_fortran_style()`
 - Automatically creates parent directories if needed
 - Supports custom encoding (default: UTF-8) and line endings (Windows/Unix)
 
 ## Documentation
+
+- **Style System:** See `docs/FORTRAN_STYLE_SYSTEM.md` for detailed information about the global Fortran style system, including how to use `set_fortran_style()` and `get_fortran_style()`.
+- **Demo Notebook:** `docs/fortran_style_demo.ipynb` provides interactive examples of the style system in action.
 
 - **Quick Reference:** See `docs/MACROFOR_CHEATSHEET.md` for a complete, auto-generated table of all
   available `*f` (single-instruction) and `*m` (macro) functions with signatures and examples.

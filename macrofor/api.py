@@ -9,6 +9,92 @@ from typing import Iterable, Optional
 import re
 
 
+# ============================================================================
+# Global configuration: Fortran style (similar to matplotlib.style or pyvista backend)
+# ============================================================================
+
+class FortranStyle:
+    """Global Fortran code generation style configuration.
+    
+    Attributes:
+        format: 'fixed' (F77) or 'free' (F90+).
+        comment_char: Comment character ('c' for F77, '!' for F90+).
+        max_line_length: Maximum line length (72 for F77, 132 for F90+).
+    """
+    def __init__(self):
+        self.format = 'fixed'
+        self.comment_char = 'c'
+        self.max_line_length = 72
+    
+    def use_f77(self):
+        """Switch to Fortran 77 fixed format style."""
+        self.format = 'fixed'
+        self.comment_char = 'c'
+        self.max_line_length = 72
+    
+    def use_f90(self):
+        """Switch to Fortran 90+ free format style."""
+        self.format = 'free'
+        self.comment_char = '!'
+        self.max_line_length = 132
+    
+    def set_style(self, style: str):
+        """Set style by name ('f77' or 'f90').
+        
+        Args:
+            style: Style name ('f77', 'fortran77', 'fixed' or 'f90', 'fortran90', 'free').
+        
+        Raises:
+            ValueError: If style name is unknown.
+        
+        Example:
+            >>> set_fortran_style('f77')
+            >>> set_fortran_style('f90')
+        """
+        style_lower = style.lower()
+        if style_lower in ('f77', 'fortran77', 'fixed'):
+            self.use_f77()
+        elif style_lower in ('f90', 'fortran90', 'free'):
+            self.use_f90()
+        else:
+            raise ValueError(f"Unknown Fortran style: {style}. Use 'f77' or 'f90'.")
+
+
+# Global style instance
+_fortran_style = FortranStyle()
+
+
+def set_fortran_style(style: str):
+    """Set global Fortran code generation style.
+    
+    Similar to matplotlib.style.use() or pyvista.set_jupyter_backend().
+    This affects all subsequent code generation calls.
+    
+    Args:
+        style: Style name ('f77'/'fixed' for Fortran 77, 'f90'/'free' for Fortran 90+).
+    
+    Example:
+        >>> from macrofor.api import set_fortran_style
+        >>> set_fortran_style('f77')  # Use strict F77 style
+        >>> set_fortran_style('f90')  # Use modern F90+ style
+    """
+    _fortran_style.set_style(style)
+
+
+def get_fortran_style() -> FortranStyle:
+    """Get current Fortran style configuration.
+    
+    Returns:
+        Current FortranStyle instance.
+    
+    Example:
+        >>> style = get_fortran_style()
+        >>> print(style.format)  # 'fixed' or 'free'
+        >>> print(style.comment_char)  # 'c' or '!'
+    """
+    return _fortran_style
+
+
 # Global label counter for automatic label management
 _label_counter = 0
 
@@ -108,22 +194,30 @@ def closef(unit: str) -> str:
 
 
 def commentf(string: str) -> str:
-    """!    string
+    """Generate a Fortran comment line using the current style.
 
-    Generate a Fortran comment line.
+    Respects the global Fortran style setting:
+    - F77 style: 'c     string' (strict F77 compatible)
+    - F90 style: '!    string' (modern F90+ style)
 
     Args:
         string: Comment text.
 
     Returns:
-        Fortran comment (e.g., "!    this is a comment").
+        Fortran comment formatted according to current style.
 
     Example:
+        >>> set_fortran_style('f77')
+        >>> commentf('calculate derivatives')
+        'c     calculate derivatives'
+        >>> set_fortran_style('f90')
         >>> commentf('calculate derivatives')
         '!    calculate derivatives'
     """
-    # Fortran comment style (Fortran 90: use '!' for modern style)
-    return f"!    {string}"
+    if _fortran_style.comment_char == 'c':
+        return f"c     {string}"
+    else:
+        return f"!    {string}"
 
 
 def commonf(name: str, list: Iterable[str]) -> str:
@@ -479,20 +573,28 @@ def subroutinef(name: str, list: Iterable[str]) -> str:
     """subroutine name (list)
 
     Generate a Fortran SUBROUTINE statement with comment header.
+    Uses the current global Fortran style for comments.
 
     Args:
         name: Subroutine name.
         list: List of parameters.
 
     Returns:
-        SUBROUTINE statement with comment header (e.g., "!\n! SUBROUTINE compute\n!\nsubroutine compute(x, y, z)").
+        SUBROUTINE statement with comment header.
+        - F77 style: "c\nc SUBROUTINE name\nc\nsubroutine name(...)"
+        - F90 style: "!\n! SUBROUTINE name\n!\nsubroutine name(...)"
 
     Example:
+        >>> set_fortran_style('f77')
+        >>> subroutinef('compute', ['x', 'y', 'z'])
+        'c\\nc SUBROUTINE compute\\nc\\nsubroutine compute(x, y, z)'
+        >>> set_fortran_style('f90')
         >>> subroutinef('compute', ['x', 'y', 'z'])
         '!\\n! SUBROUTINE compute\\n!\\nsubroutine compute(x, y, z)'
     """
     args = _normalize_list_arg(list)
-    return f"!\n! SUBROUTINE {name}\n!\nsubroutine {name}({args})"
+    c = _fortran_style.comment_char
+    return f"{c}\n{c} SUBROUTINE {name}\n{c}\nsubroutine {name}({args})"
 
 
 def writef(file: str, label: Optional[str], list: Iterable[str]) -> str:
@@ -687,6 +789,7 @@ def subroutinem(name: str, list: Iterable[str], body_list) -> str:
     end subroutine name
 
     Generate a multi-line SUBROUTINE block (macro version) with comment header.
+    Uses the current global Fortran style for comments.
     
     Args:
         name: Subroutine name.
@@ -695,16 +798,23 @@ def subroutinem(name: str, list: Iterable[str], body_list) -> str:
     
     Returns:
         Complete SUBROUTINE definition with comment header (indented body).
+        - F77 style: "c\nc SUBROUTINE name\nc\nsubroutine name(...)\n  body\nend subroutine name"
+        - F90 style: "!\n! SUBROUTINE name\n!\nsubroutine name(...)\n  body\nend subroutine name"
     
     Example:
+        >>> set_fortran_style('f77')
+        >>> subroutinem('compute', ['x', 'y'], ['integer :: i', 'i = x + y'])
+        'c\\nc SUBROUTINE compute\\nc\\nsubroutine compute(x, y)\\n  integer :: i\\n  i = x + y\\nend subroutine compute'
+        >>> set_fortran_style('f90')
         >>> subroutinem('compute', ['x', 'y'], ['integer :: i', 'i = x + y'])
         '!\\n! SUBROUTINE compute\\n!\\nsubroutine compute(x, y)\\n  integer :: i\\n  i = x + y\\nend subroutine compute'
     """
     args = _normalize_list_arg(list)
     body_text = _body_to_text(body_list)
     body_indented = _indent_lines(body_text)
+    c = _fortran_style.comment_char
     
-    return f"!\n! SUBROUTINE {name}\n!\nsubroutine {name}({args})\n{body_indented}\nend subroutine {name}"
+    return f"{c}\n{c} SUBROUTINE {name}\n{c}\nsubroutine {name}({args})\n{body_indented}\nend subroutine {name}"
 
 
 def openm(unit: str, file: str, status: str, body_list, access: str = None) -> str:
@@ -872,9 +982,17 @@ def _wrap_long_lines(code: str, max_length: int = 72, format_style: str = 'fixed
         while len(remaining) + indent > max_length:
             
             # Calculate where to split (leave room for indent and continuation)
-            available = max_length - indent
-            if not first_line:
-                available = max_length - 6  # Continuation line starts at column 7
+            if format_style == 'free':
+                # F90: First line uses current indent, continuation uses space for ' &'
+                if first_line:
+                    available = max_length - indent - 2  # Reserve 2 chars for ' &'
+                else:
+                    available = max_length - 2  # ' &' at start, ' &' at end if needed
+            else:
+                # F77: Fixed format
+                available = max_length - indent
+                if not first_line:
+                    available = max_length - 6  # Continuation line starts at column 7
             
             # Find a good split position (prefer operators and commas)
             split_pos = available
@@ -897,7 +1015,8 @@ def _wrap_long_lines(code: str, max_length: int = 72, format_style: str = 'fixed
                 remaining = remaining[split_pos:].lstrip()
                 if remaining and not remaining.startswith('&'):
                     remaining = '&' + remaining
-                indent = 1  # Continuation lines get minimal indent
+                first_line = False
+                indent = 0  # Next line starts with ' &' (2 chars total)
             else:
                 # Fortran 77 Fixed Format: character in column 6
                 if first_line:
@@ -914,29 +1033,30 @@ def _wrap_long_lines(code: str, max_length: int = 72, format_style: str = 'fixed
             wrapped.append(' ' * indent + remaining)
     
     return '\n'.join(wrapped)
-    
-    return '\n'.join(wrapped)
 
 
 def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n", 
-           format_style='fixed', max_line_length=None):
-    """genfor(fortranfile, statements, [encoding], [line_ending], [format_style], [max_line_length])
+           max_line_length=None):
+    """genfor(fortranfile, statements, [encoding], [line_ending], [max_line_length])
 
     Write a list of macrofor statements/blocks to a Fortran file.
     
     - Resets and assigns unique labels for DO-loops and other control structures.
     - Replaces label placeholders (__LABEL_N__) with sequential numbers (100, 200, 300, ...).
-    - Automatically wraps long lines based on format style.
+    - Automatically wraps long lines based on the current global Fortran style.
     - Raises clear exceptions on error.
-    - Optional: select encoding, line endings, and Fortran format.
+    - Optional: select encoding, line endings, and maximum line length.
+
+    The Fortran format style (F77 or F90) is controlled by set_fortran_style().
+    Call set_fortran_style('f77') or set_fortran_style('f90') before using genfor().
 
     Args:
         fortranfile (str or Path): Output file path.
         statements (list of str): List of Fortran code blocks/lines.
         encoding (str): File encoding (default: 'utf-8').
         line_ending (str): Line ending (default: '\\n').
-        format_style (str): 'fixed' (F77) or 'free' (F90+) (default: 'fixed').
-        max_line_length (int): Maximum line length. If None, uses 72 for fixed, 132 for free.
+        max_line_length (int, optional): Maximum line length. 
+                                        If None, uses 72 for fixed format (F77), 132 for free format (F90).
 
     Returns:
         None. Writes the Fortran code to the specified file.
@@ -945,18 +1065,22 @@ def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n",
         RuntimeError: If the file cannot be written.
 
     Example:
-        >>> genfor('myprog.f90', [
-        ...     programm('main', [
-        ...         dom('i', 1, 10, [equalf('x', 'i')]),
-        ...         dom('j', 1, 5, [equalf('y', 'j')])
-        ...     ])
-        ... ], format_style='free')
+        >>> # Set global style once, then generate code
+        >>> set_fortran_style('f77')
+        >>> genfor('myprog.f', [programm('main', [...])])
+        >>> 
+        >>> # For F90 style
+        >>> set_fortran_style('f90')
+        >>> genfor('modern.f90', [programm('main', [...])])
     """
     from pathlib import Path
     
     try:
         # Reset label counter at the start of file generation
         _reset_label_counter()
+        
+        # Use global Fortran style
+        format_style = _fortran_style.format
         
         filepath = Path(fortranfile)
         # Ensure parent directory exists
@@ -968,9 +1092,9 @@ def genfor(fortranfile, statements, encoding="utf-8", line_ending="\n",
         # Replace label placeholders with sequential numbers (100, 200, 300, ...)
         code = _replace_label_placeholders(code)
         
-        # Determine max line length based on format
+        # Determine max line length based on global style
         if max_line_length is None:
-            max_line_length = 72 if format_style == 'fixed' else 132
+            max_line_length = _fortran_style.max_line_length
         
         # Wrap long lines if needed
         if max_line_length > 0:

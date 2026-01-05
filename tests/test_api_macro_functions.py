@@ -52,7 +52,8 @@ def test_dom():
     mf._reset_label_counter()
     body = ['a(i) = i', 'b(i) = i * 2']
     result = mf.dom('i', 1, 10, body)
-    assert 'do __LABEL_1__ i=1, 10' in result
+    # Correct F77 syntax has comma after label
+    assert 'do __LABEL_1__, i=1, 10' in result
     assert 'a(i) = i' in result
     assert '__LABEL_1__ continue' in result
 
@@ -61,7 +62,8 @@ def test_dom_with_step():
     mf._reset_label_counter()
     body = ['x(i) = x(i) + 1']
     result = mf.dom('i', 1, 100, body, step=2)
-    assert 'do __LABEL_1__ i=1, 100, 2' in result
+    # Correct F77 syntax has comma after label
+    assert 'do __LABEL_1__, i=1, 100, 2' in result
     assert 'x(i) = x(i) + 1' in result
     assert '__LABEL_1__ continue' in result
 
