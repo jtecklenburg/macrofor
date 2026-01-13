@@ -626,8 +626,24 @@ def writef(file: str, label: Optional[str], list: Iterable[str]) -> str:
 # Macro functions (*m): generate multi-line blocks with indentation
 # ============================================================================
 
-def _indent_lines(text: str, indent: str = "  ") -> str:
-    """Indent all non-empty lines in text."""
+def _indent_lines(text: str, indent: str = None) -> str:
+    """Indent all non-empty lines in text.
+    
+    For F77 fixed format, does NOT add indentation here - all statements 
+    must start in column 7, which is handled by _wrap_long_lines().
+    For F90 free format, uses 2 spaces for nested blocks.
+    """
+    if indent is None:
+        # F77: No indentation (all statements must be in column 7)
+        # F90: 2-space indentation for nested blocks
+        if _fortran_style.format == 'fixed':
+            return text  # No additional indentation for F77
+        else:
+            indent = "  "  # 2-space indent for F90
+    
+    if not indent:  # If indent is empty, return text unchanged
+        return text
+    
     lines = text.split("\n")
     return "\n".join(indent + line if line.strip() else "" for line in lines)
 
@@ -676,7 +692,7 @@ def dom(index: str, start, end, do_list, step=None) -> str:
     body_text = _body_to_text(do_list)
     body_indented = _indent_lines(body_text)
     
-    return f"do {label}, {rng}\n{body_indented}\n{label} continue"
+    return f"do {label} {rng}\n{body_indented}\n{label} continue"
 
 
 def functionm(type: str, name: str, list: Iterable[str], body_list) -> str:
@@ -946,27 +962,60 @@ def declarem(type: str, list: Iterable[str]) -> str:
 def _wrap_long_lines(code: str, max_length: int = 72, format_style: str = 'fixed') -> str:
     """Wrap Fortran lines longer than max_length using continuation characters.
     
+    For F77 fixed format, adds 6-space indentation (statements start in column 7).
+    
     Args:
         code: Fortran source code.
         max_length: Maximum line length (default: 72 for fixed format).
         format_style: 'fixed' or 'free' (default: 'fixed').
     
     Returns:
-        Code with wrapped lines.
+        Code with wrapped lines and proper indentation.
     """
     lines = code.split('\n')
     wrapped = []
     
+    # F77 fixed format: statements must start in column 7 (6 spaces)
+    f77_indent = '      ' if format_style == 'fixed' else ''
+    
     for line in lines:
+        # Skip empty lines
+        if not line.strip():
+            wrapped.append(line)
+            continue
+            
         # Skip Fortran comments (must be at start of line, possibly with whitespace)
         stripped = line.lstrip()
         if stripped.startswith(('!', 'c ', 'C ', '* ', 'c\t', 'C\t')):
-            wrapped.append(line)
+            # For F77, ensure comment char is in column 1 (no indentation for comments)
+            if format_style == 'fixed' and not line.startswith(('c', 'C', '*', '!')):
+                wrapped.append(stripped)
+            else:
+                wrapped.append(line)
             continue
         # Also check for comment-only lines (just 'c', 'C', or '*')
-        if stripped in ('c', 'C', '*'):
-            wrapped.append(line)
+        if stripped in ('c', 'C', '*', '!'):
+            wrapped.append(stripped)
             continue
+        
+        # For F77 fixed format, handle labels and indentation
+        if format_style == 'fixed':
+            # Check if line starts with a label (digits followed by space)
+            # Labels must be in columns 1-5 (no indentation)
+            import re
+            label_match = re.match(r'^\s*(\d+)\s+(.+)', line)
+            if label_match:
+                # This is a labeled statement
+                label = label_match.group(1)
+                rest = label_match.group(2)
+                # Format: label right-aligned in columns 1-5, statement starts column 7
+                line = f"{label:>5} {rest}"
+            else:
+                # Regular statement - ensure proper indentation
+                current_indent = len(line) - len(line.lstrip())
+                if current_indent < 6:
+                    # Not enough indentation - adjust to 6 spaces
+                    line = f77_indent + line.lstrip()
         
         # Skip short lines
         if len(line) <= max_length:
@@ -990,8 +1039,9 @@ def _wrap_long_lines(code: str, max_length: int = 72, format_style: str = 'fixed
                     available = max_length - 2  # ' &' at start, ' &' at end if needed
             else:
                 # F77: Fixed format
-                available = max_length - indent
-                if not first_line:
+                if first_line:
+                    available = max_length - indent
+                else:
                     available = max_length - 6  # Continuation line starts at column 7
             
             # Find a good split position (prefer operators and commas)

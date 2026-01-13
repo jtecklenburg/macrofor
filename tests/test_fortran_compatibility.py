@@ -84,9 +84,9 @@ class TestF77FixedFormat:
         try:
             content = output_path.read_text()
             
-            # Should contain "do 100," (label with comma)
-            assert re.search(r'do\s+\d+\s*,', content, re.IGNORECASE), \
-                "DO loop should have label with comma"
+            # Should contain "do 100 i" (label WITHOUT comma - correct Fortran syntax)
+            assert re.search(r'do\s+\d+\s+\w+\s*=', content, re.IGNORECASE), \
+                "DO loop should have label (without comma)"
             
             # Should contain "100 continue" (label continue)
             assert re.search(r'\d+\s+continue', content, re.IGNORECASE), \
@@ -215,8 +215,8 @@ class TestF77FixedFormat:
         try:
             content = output_path.read_text()
             
-            # Find all DO labels
-            do_labels = re.findall(r'do\s+(\d+)\s*,', content, re.IGNORECASE)
+            # Find all DO labels (correct syntax: "do 100 i=")
+            do_labels = re.findall(r'do\s+(\d+)\s+\w+\s*=', content, re.IGNORECASE)
             
             # Should have 2 DO loops
             assert len(do_labels) == 2, f"Expected 2 DO loops, found {len(do_labels)}"
@@ -365,10 +365,10 @@ class TestF90FreeFormat:
         try:
             content = output_path.read_text()
             
-            # macrofor generates F77-style DO loops (compatible with F90)
-            # Should contain "do 100," (label with comma)
-            assert re.search(r'do\s+\d+\s*,', content, re.IGNORECASE), \
-                "DO loop should have label with comma"
+            # macrofor generates classic DO loops (compatible with F90)
+            # Should contain "do 100 i" (label WITHOUT comma - correct Fortran syntax)
+            assert re.search(r'do\s+\d+\s+\w+\s*=', content, re.IGNORECASE), \
+                "DO loop should have label (without comma)"
             
             # Should contain "100 continue"
             assert re.search(r'\d+\s+continue', content, re.IGNORECASE), \
@@ -557,9 +557,9 @@ class TestEdgeCases:
     
     def test_exactly_72_chars_f77(self):
         """F77: Line with exactly 72 chars should not be wrapped."""
-        # Create a line with exactly 72 characters
-        # "x = " (4 chars) + expression to fill to 72
-        expr = "a" * 68  # 4 + 68 = 72
+        # Create a line with exactly 72 characters including 6-space indentation
+        # "      x = " (10 chars) + expression to fill to 72
+        expr = "a" * 62  # 6 + 4 + 62 = 72
         code = [equalf('x', expr)]
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.f', delete=False) as f:
@@ -571,9 +571,9 @@ class TestEdgeCases:
             content = output_path.read_text()
             lines = [l for l in content.split('\n') if l.strip()]
             
-            # Should be on one line (exactly 72 chars)
-            assert len(lines) == 1, f"Should be single line, got {len(lines)}"
-            assert len(lines[0]) == 72, f"Line should be exactly 72 chars, got {len(lines[0])}"
+            # Should be on one line (exactly 72 chars with indentation)
+            assert len(lines) == 1, f"Should be single line, got {len(lines)}: {lines}"
+            assert len(lines[0]) == 72, f"Line should be exactly 72 chars, got {len(lines[0])}: '{lines[0]}'"
         finally:
             output_path.unlink()
     

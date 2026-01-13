@@ -321,8 +321,8 @@ class TestGenforLabelHandling:
         
         content = output_file.read_text()
 
-        # Label should be replaced with 100 (with comma in F77 syntax)
-        assert "do 100, i" in content
+        # Label should be replaced with 100 (correct Fortran syntax: no comma)
+        assert "do 100 i" in content
         assert "100 continue" in content
         # Should NOT contain label placeholders
         assert "__LABEL_" not in content
@@ -352,12 +352,12 @@ class TestGenforLabelHandling:
         content = output_file.read_text()
         
         # All three labels should be present and unique (100, 200, 300)
-        # Correct F77 syntax has comma after label
-        assert "do 100, i" in content
+        # Correct Fortran syntax: NO comma after label
+        assert "do 100 i" in content
         assert "100 continue" in content
-        assert "do 200, j" in content
+        assert "do 200 j" in content
         assert "200 continue" in content
-        assert "do 300, k" in content
+        assert "do 300 k" in content
         assert "300 continue" in content
         # No label placeholders should remain
         assert "__LABEL_" not in content
@@ -382,14 +382,14 @@ class TestGenforLabelHandling:
         
         content = output_file.read_text()
         
-        # Both labels should be present (with comma in F77 syntax)
-        assert "do 100, i" in content
+        # Both labels should be present (correct syntax: no comma)
+        assert "do 100 i" in content
         assert "100 continue" in content
-        assert "do 200, j" in content
+        assert "do 200 j" in content
         assert "200 continue" in content
         # The inner loop (200) should come after outer (100)
-        idx_outer = content.find("do 100,")
-        idx_inner = content.find("do 200,")
+        idx_outer = content.find("do 100 ")
+        idx_inner = content.find("do 200 ")
         assert idx_outer < idx_inner, "Outer loop should come before inner loop"
         # No placeholders should remain
         assert "__LABEL_" not in content
@@ -430,10 +430,10 @@ class TestGenforLabelHandling:
         
         content = output_file.read_text()
 
-        # Verify all three labels are present and sequential (with comma in F77 syntax)
-        assert "do 100, i" in content
-        assert "do 200, j" in content
-        assert "do 300, k" in content
+        # Verify all three labels are present and sequential (correct syntax: no comma)
+        assert "do 100 i" in content
+        assert "do 200 j" in content
+        assert "do 300 k" in content
         assert "100 continue" in content
         assert "200 continue" in content
         assert "300 continue" in content
