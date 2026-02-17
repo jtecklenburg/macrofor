@@ -405,7 +405,7 @@ def formatf(list: Iterable[str]) -> str:
     """
     label = _get_next_label_placeholder()
     items = _normalize_list_arg(list)
-    return f"{label} format ({items})"
+    return f"{label} format({items})"
 
 
 def functionf(type: str, name: str, list: Iterable[str]) -> str:
@@ -889,7 +889,7 @@ def readm(file: str, format_list: Iterable[str], var_list: Iterable[str]) -> str
     fmt_items = _normalize_list_arg(format_list)
     var_items = _normalize_list_arg(var_list)
     
-    return f"read({file}, {label}) {var_items}\n{label} format ({fmt_items})"
+    return f"read({file}, {label}) {var_items}\n{label} format({fmt_items})"
 
 
 def writem(file: str, format_list: Iterable[str], var_list: Iterable[str]) -> str:
@@ -916,7 +916,7 @@ def writem(file: str, format_list: Iterable[str], var_list: Iterable[str]) -> st
     fmt_items = _normalize_list_arg(format_list)
     var_items = _normalize_list_arg(var_list)
     
-    return f"write({file}, {label}) {var_items}\n{label} format ({fmt_items})"
+    return f"write({file}, {label}) {var_items}\n{label} format({fmt_items})"
 
 
 def commonm(name: str, list: Iterable[str]) -> str:
