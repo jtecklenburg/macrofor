@@ -79,14 +79,14 @@ def test_readm():
     mf._reset_label_counter()
     result = mf.readm('5', ['I5', 'F10.2'], ['i', 'x'])
     assert 'read(5, __LABEL_1__) i, x' in result
-    assert '__LABEL_1__ format (I5, F10.2)' in result
+    assert '__LABEL_1__ format(I5, F10.2)' in result
 
 
 def test_writem():
     mf._reset_label_counter()
     result = mf.writem('6', ['I3', 'A'], ['iter', 'msg'])
     assert 'write(6, __LABEL_1__) iter, msg' in result
-    assert '__LABEL_1__ format (I3, A)' in result
+    assert '__LABEL_1__ format(I3, A)' in result
 
 
 def test_commonm():
