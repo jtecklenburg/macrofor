@@ -63,5 +63,5 @@ program newton_fractal
     end do
   end do
 
-  call write_ppm_p6('newton_out.ppm', img, width, height)
+  call write_pgm_p5('newton_out.ppm', img, width, height)
 end program newton_fractal
